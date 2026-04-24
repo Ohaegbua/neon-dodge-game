@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Neon Dodge</title>
+<style>
+    body {
+        margin: 0;
+        background: #0f0f1a;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+        color: white;
+        text-align: center;
+    }
+    canvas {
+        display: block;
+        margin: auto;
+        background: #111;
+        border: 2px solid #00f0ff;
+        box-shadow: 0 0 20px #00f0ff;
+    }
+    #ui {
+        position: absolute;
+        top: 10px;
+        width: 100%;
+        font-size: 20px;
+    }
+    #gameOver {
+        position: absolute;
+        top: 40%;
+        width: 100%;
+        font-size: 30px;
+        display: none;
+    }
+    button {
+        padding: 10px 20px;
+        font-size: 18px;
+        margin-top: 10px;
+        cursor: pointer;
+    }
+</style>
+</head>
+
+<body>
+
+<div id="ui">Score: <span id="score">0</span></div>
+<div id="gameOver">
+    Game Over<br>
+    <button onclick="restart()">Restart</button>
+</div>
+
+<canvas id="game" width="600" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let player = { x: 300, y: 300, size: 15 };
+let enemies = [];
+let keys = {};
+let score = 0;
+let gameOver = false;
+
+document.addEventListener("keydown", e => keys[e.key] = true);
+document.addEventListener("keyup", e => keys[e.key] = false);
+
+function spawnEnemy() {
+    const edge = Math.floor(Math.random() * 4);
+    let x, y;
+
+    if (edge === 0) { x = 0; y = Math.random()*600; }
+    if (edge === 1) { x = 600; y = Math.random()*600; }
+    if (edge === 2) { x = Math.random()*600; y = 0; }
+    if (edge === 3) { x = Math.random()*600; y = 600; }
+
+    enemies.push({ x, y, size: 12, speed: 1 + score * 0.02 });
+}
+
+function update() {
+    if (gameOver) return;
+
+    // Movement
+    if (keys["w"] || keys["ArrowUp"]) player.y -= 3;
+    if (keys["s"] || keys["ArrowDown"]) player.y += 3;
+    if (keys["a"] || keys["ArrowLeft"]) player.x -= 3;
+    if (keys["d"] || keys["ArrowRight"]) player.x += 3;
+
+    // Boundaries
+    player.x = Math.max(0, Math.min(600, player.x));
+    player.y = Math.max(0, Math.min(600, player.y));
+
+    // Enemy movement
+    enemies.forEach(e => {
+        let dx = player.x - e.x;
+        let dy = player.y - e.y;
+        let dist = Math.hypot(dx, dy);
+
+        e.x += (dx / dist) * e.speed;
+        e.y += (dy / dist) * e.speed;
+
+        // Collision
+        if (dist < player.size + e.size) {
+            gameOver = true;
+            document.getElementById("gameOver").style.display = "block";
+        }
+    });
+
+    score++;
+    document.getElementById("score").textContent = score;
+}
+
+function draw() {
+    ctx.clearRect(0, 0, 600, 600);
+
+    // Player
+    ctx.fillStyle = "#00f0ff";
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, player.size, 0, Math.PI*2);
+    ctx.fill();
+
+    // Enemies
+    ctx.fillStyle = "#ff004c";
+    enemies.forEach(e => {
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, e.size, 0, Math.PI*2);
+        ctx.fill();
+    });
+}
+
+function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+
+setInterval(spawnEnemy, 1200);
+loop();
+
+function restart() {
+    player = { x: 300, y: 300, size: 15 };
+    enemies = [];
+    score = 0;
+    gameOver = false;
+    document.getElementById("gameOver").style.display = "none";
+}
+</script>
+
+</body>
+</html>
